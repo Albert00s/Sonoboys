@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Envio de Músicas - Igreja</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+    --azul:#1565c0;
+    --azul-claro:#e3f2fd;
+    --branco:#ffffff;
+    --cinza:#f5f7fa;
+    --texto:#1f2937;
+    --borda:#d1d5db;
+}
+
+/* RESET */
+*{
+    box-sizing:border-box;
+    font-family:"Segoe UI", Arial, sans-serif;
+}
+
+/* BODY */
+body{
+    margin:0;
+    background:var(--cinza);
+    color:var(--texto);
+}
+
+/* PRELOADER */
+#preloader{
+    position:fixed;
+    inset:0;
+    background:var(--branco);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+}
+.loader{
+    width:60px;
+    height:60px;
+    border:6px solid var(--azul-claro);
+    border-top:6px solid var(--azul);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+}
+#preloader span{
+    margin-top:15px;
+    font-weight:600;
+    color:var(--azul);
+}
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
+
+/* CONTAINER */
+.container{
+    max-width:850px;
+    margin:40px auto;
+    background:var(--branco);
+    padding:35px;
+    border-radius:12px;
+    box-shadow:0 20px 40px rgba(0,0,0,.08);
+}
+
+/* TITLES */
+h1{
+    text-align:center;
+    color:var(--azul);
+    margin-bottom:10px;
+}
+h2{
+    text-align:center;
+    margin:30px 0 10px;
+}
+h3{
+    margin-top:0;
+    color:var(--azul);
+}
+
+/* HR */
+hr{
+    border:none;
+    height:1px;
+    background:var(--borda);
+    margin:30px 0;
+}
+
+/* FIELD */
+.field{
+    margin-bottom:16px;
+}
+label{
+    font-weight:600;
+    margin-bottom:6px;
+    display:block;
+}
+input, select, textarea{
+    width:100%;
+    padding:10px 12px;
+    border-radius:6px;
+    border:1px solid var(--borda);
+    transition:.3s;
+}
+input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--azul);
+    box-shadow:0 0 0 2px rgba(21,101,192,.15);
+}
+
+/* SONG CARD */
+.song{
+    background:var(--azul-claro);
+    border-left:6px solid var(--azul);
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+/* BUTTONS */
+button{
+    border:none;
+    border-radius:8px;
+    padding:12px 18px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.3s;
+}
+.btn-add{
+    background:var(--azul);
+    color:var(--branco);
+    margin-bottom:20px;
+}
+.btn-add:hover{
+    opacity:.9;
+}
+.btn-submit{
+    width:100%;
+    background:var(--azul);
+    color:var(--branco);
+    font-size:16px;
+}
+.btn-submit:hover{
+    letter-spacing:.5px;
+}
+
+/* UTIL */
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<!-- PRELOADER -->
+<div id="preloader">
+    <div class="loader"></div>
+    <span>Carregando formulário...</span>
+</div>
+
+<div class="container">
+
+<h1>Envio de Músicas</h1>
+
+<form method="POST" action="enviar.php" enctype="multipart/form-data">
+
+<div class="field">
+<label>Quem vai cantar?</label>
+<select id="grupo" name="grupo" required>
+<option value="">Selecione</option>
+<option value="irmas">Grupo das Irmãs</option>
+<option value="criancas">Crianças</option>
+<option value="juventude">Juventude</option>
+<option value="louvor">Grupo de Louvor</option>
+<option value="louvor_irmas">Grupo de Louvor das Irmãs</option>
+<option value="visitante">Visitante</option>
+</select>
+</div>
+
+<div class="field hidden" id="visitanteField">
+<label>Nome do visitante</label>
+<input type="text" name="nome_visitante">
+</div>
+
+<hr>
+
+<h2>Músicas</h2>
+
+<div id="songsContainer"></div>
+
+<button type="button" class="btn-add" onclick="addSong()">
+Adicionar música
+</button>
+
+<button type="submit" class="btn-submit">
+Enviar músicas
+</button>
+
+</form>
+</div>
+
+<script>
+/* PRELOADER */
+window.addEventListener("load",()=>{
+    document.getElementById("preloader").style.display="none";
+});
+
+let songIndex = 0;
+
+document.getElementById("grupo").addEventListener("change",function(){
+    document.getElementById("visitanteField").style.display =
+        this.value==="visitante" ? "block" : "none";
+});
+
+function addSong(){
+    songIndex++;
+
+    const div=document.createElement("div");
+    div.className="song";
+
+    div.innerHTML=`
+    <h3>Música ${songIndex}</h3>
+
+    <div class="field">
+        <label>Título da música</label>
+        <input type="text" name="songs[${songIndex}][titulo]" required>
+    </div>
+
+    <div class="field">
+        <label>Tipo</label>
+        <select name="songs[${songIndex}][tipo]" onchange="toggleTipo(this,${songIndex})" required>
+            <option value="">Selecione</option>
+            <option value="arquivo">Arquivo</option>
+            <option value="link">Link</option>
+        </select>
+    </div>
+
+    <div class="field hidden" id="arquivo_${songIndex}">
+        <label>Arquivo da música</label>
+        <input type="file" name="songs[${songIndex}][arquivo]" accept=".mp3,.wav">
+    </div>
+
+    <div class="field hidden" id="link_${songIndex}">
+        <label>Link da música</label>
+        <input type="url" name="songs[${songIndex}][link]">
+    </div>
+
+    <div class="field">
+        <label>Playback?</label>
+        <select name="songs[${songIndex}][playback]">
+            <option value="nao">Não</option>
+            <option value="sim">Sim</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Observações</label>
+        <textarea name="songs[${songIndex}][observacao]" rows="2"></textarea>
+    </div>
+    `;
+
+    document.getElementById("songsContainer").appendChild(div);
+}
+
+function toggleTipo(select,index){
+    document.getElementById("arquivo_"+index).style.display="none";
+    document.getElementById("link_"+index).style.display="none";
+
+    if(select.value==="arquivo"){
+        document.getElementById("arquivo_"+index).style.display="block";
+    }
+    if(select.value==="link"){
+        document.getElementById("link_"+index).style.display="block";
+    }
+}
+</script>
+
+</body>
+</html>
